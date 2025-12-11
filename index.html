@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator SL & TP (1% Risiko)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #2d2d2d;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        h2 {
+            color: #64b5f6;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        input[type="number"], select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background-color: #3c3c3c;
+            color: #d4d4d4;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px dashed #64b5f6;
+            border-radius: 8px;
+            background-color: #393939;
+        }
+        .result p {
+            margin: 8px 0;
+        }
+        .result strong {
+            color: #ffcc80;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>💰 Kalkulator Trading (Position Sizing)</h2>
+
+        <label for="modal">Total Modal (Rupiah):</label>
+        <input type="number" id="modal" value="962088" required>
+
+        <label for="risiko">Batas Risiko Maksimal:</label>
+        <select id="risiko">
+            <option value="0.01">1% (Sangat Konservatif)</option>
+            <option value="0.03">3% (Konservatif)</option>
+        </select>
+        
+        <label for="hargaBeli">Harga Beli (Entry Price):</label>
+        <input type="number" id="hargaBeli" required>
+
+        <label for="atr">ATR (Jarak SL 2x ATR):</label>
+        <input type="number" id="atr" required>
+
+        <label for="riskReward">Rasio Risk-Reward (R:R):</label>
+        <select id="riskReward">
+            <option value="2">1:2</option>
+            <option value="3">1:3</option>
+        </select>
+
+        <button onclick="hitungTrading()">Hitung Posisi & Exit</button>
+
+        <div class="result" id="hasil">
+            <p style="text-align: center;">Masukkan data untuk memulai perhitungan.</p>
+        </div>
+    </div>
+
+    <script>
+        function hitungTrading() {
+            const modal = parseFloat(document.getElementById('modal').value);
+            const risiko = parseFloat(document.getElementById('risiko').value);
+            const hargaBeli = parseFloat(document.getElementById('hargaBeli').value);
+            const atr = parseFloat(document.getElementById('atr').value);
+            const riskReward = parseInt(document.getElementById('riskReward').value);
+            const hasilDiv = document.getElementById('hasil');
+
+            if (isNaN(modal) || isNaN(hargaBeli) || isNaN(atr)) {
+                hasilDiv.innerHTML = '<p style="color: red;">Mohon isi semua kolom input yang diperlukan.</p>';
+                return;
+            }
+
+            // --- 1. Perhitungan Batas Risiko ---
+            const nilaiRisikoMaksimal = modal * risiko;
+            
+            // --- 2. Perhitungan Jarak SL (2 x ATR) ---
+            const jarakSLFloat = atr * 2;
+            const jarakSL = Math.ceil(jarakSLFloat); // Bulatkan ke atas karena harga bergerak dalam Rupiah penuh
+
+            // --- 3. Perhitungan Titik SL & TP ---
+            const titikSL = hargaBeli - jarakSL;
+            const jarakTP = jarakSL * riskReward;
+            const titikTP = hargaBeli + jarakTP;
+
+            // --- 4. Perhitungan Lot Maksimum (Position Sizing) ---
+            const risikoPerSaham = jarakSL;
+            const lotMaksimum = Math.floor(nilaiRisikoMaksimal / (risikoPerSaham * 100));
+
+            // --- Tampilkan Hasil ---
+            hasilDiv.innerHTML = `
+                <h3>✅ Hasil Perhitungan Optimal</h3>
+                <hr>
+                <p>Batas Risiko Nominal (${(risiko * 100).toFixed(0)}%): <strong>Rp${nilaiRisikoMaksimal.toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</strong></p>
+                
+                <h4>📊 Ukuran Posisi</h4>
+                <p>Risiko per Saham (Jarak SL): <strong>Rp${risikoPerSaham}</strong></p>
+                <p>Lot Maksimum (Aman): <strong>${lotMaksimum} Lot</strong></p>
+                
+                <h4>📉 Exit Plan: Stop-Loss (SL)</h4>
+                <p>Jarak SL (2 x ATR): <strong>Rp${jarakSL}</strong></p>
+                <p>Titik SL Teknis: <strong>Rp${titikSL.toFixed(0)}</strong></p>
+                
+                <h4>📈 Exit Plan: Take-Profit (TP)</h4>
+                <p>Rasio Risk-Reward: <strong>1:${riskReward}</strong></p>
+                <p>Jarak TP: <strong>Rp${jarakTP}</strong></p>
+                <p>Titik TP Teknis: <strong>Rp${titikTP.toFixed(0)}</strong></p>
+            `;
+        }
+    </script>
+</body>
+</html>
