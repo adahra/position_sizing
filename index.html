@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulator SL & TP (1% Risiko)</title>
+    <title>Kalkulator SL & TP (R:R Dinamis)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -75,13 +75,18 @@
         <h2>💰 Kalkulator Trading (Position Sizing)</h2>
 
         <label for="modal">Total Modal (Rupiah):</label>
-        <input type="number" id="modal" value="962088" required>
+        <input type="number" id="modal" value="500000" required>
 
         <label for="risiko">Batas Risiko Maksimal:</label>
-        <select id="risiko">
+        <select id="risiko" onchange="updateRiskRewardOptions()">
             <option value="0.01">1% (Sangat Konservatif)</option>
-            <option value="0.03">3% (Konservatif)</option>
+            <option value="0.03" selected>3% (Konservatif)</option>
+            <option value="0.05">5% (Agresif)</option>
         </select>
+
+        <label for="riskReward">Rasio Risk-Reward (R:R):</label>
+        <select id="riskReward">
+            </select>
         
         <label for="hargaBeli">Harga Beli (Entry Price):</label>
         <input type="number" id="hargaBeli" required>
@@ -89,30 +94,65 @@
         <label for="atr">ATR (Jarak SL 2x ATR):</label>
         <input type="number" id="atr" required>
 
-        <label for="riskReward">Rasio Risk-Reward (R:R):</label>
-        <select id="riskReward">
-            <option value="2">1:2</option>
-            <option value="3">1:3</option>
-        </select>
-
         <button onclick="hitungTrading()">Hitung Posisi & Exit</button>
 
         <div class="result" id="hasil">
-            <p style="text-align: center;">Masukkan data untuk memulai perhitungan.</p>
+            <p style="text-align: center;">Pilih risiko dan masukkan data untuk memulai perhitungan.</p>
         </div>
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', updateRiskRewardOptions);
+
+        function updateRiskRewardOptions() {
+            const risiko = parseFloat(document.getElementById('risiko').value);
+            const riskRewardSelect = document.getElementById('riskReward');
+            riskRewardSelect.innerHTML = ''; // Clear previous options
+
+            let options = [];
+
+            if (risiko === 0.01) {
+                // Untuk risiko konservatif (1%), R:R lebih tinggi sering dicari.
+                options = [
+                    { value: 2, text: '1:2 (Standar)' },
+                    { value: 3, text: '1:3 (Optimal)' }
+                ];
+            } else if (risiko === 0.03) {
+                // Untuk risiko standar (3%), R:R 1:2 adalah yang paling umum.
+                options = [
+                    { value: 1.5, text: '1:1.5 (Minimum)' },
+                    { value: 2, text: '1:2 (Standar)' }
+                ];
+            } else if (risiko === 0.05) {
+                // Untuk risiko agresif (5%), R:R dapat lebih rendah untuk trade cepat.
+                options = [
+                    { value: 1, text: '1:1 (Skalping/Intraday Cepat)' },
+                    { value: 1.5, text: '1:1.5 (Agresif)' }
+                ];
+            }
+
+            options.forEach(optionData => {
+                const option = document.createElement('option');
+                option.value = optionData.value;
+                option.textContent = optionData.text;
+                if (optionData.value === 2 && risiko !== 0.05) {
+                    option.selected = true; // Default ke 1:2
+                }
+                riskRewardSelect.appendChild(option);
+            });
+        }
+
+
         function hitungTrading() {
             const modal = parseFloat(document.getElementById('modal').value);
             const risiko = parseFloat(document.getElementById('risiko').value);
             const hargaBeli = parseFloat(document.getElementById('hargaBeli').value);
             const atr = parseFloat(document.getElementById('atr').value);
-            const riskReward = parseInt(document.getElementById('riskReward').value);
+            const riskReward = parseFloat(document.getElementById('riskReward').value);
             const hasilDiv = document.getElementById('hasil');
 
-            if (isNaN(modal) || isNaN(hargaBeli) || isNaN(atr)) {
-                hasilDiv.innerHTML = '<p style="color: red;">Mohon isi semua kolom input yang diperlukan.</p>';
+            if (isNaN(modal) || isNaN(hargaBeli) || isNaN(atr) || isNaN(riskReward)) {
+                hasilDiv.innerHTML = '<p style="color: red;">Mohon isi semua kolom input yang diperlukan dan pastikan R:R telah dipilih.</p>';
                 return;
             }
 
@@ -121,11 +161,12 @@
             
             // --- 2. Perhitungan Jarak SL (2 x ATR) ---
             const jarakSLFloat = atr * 2;
-            const jarakSL = Math.ceil(jarakSLFloat); // Bulatkan ke atas karena harga bergerak dalam Rupiah penuh
+            const jarakSL = Math.ceil(jarakSLFloat); 
 
             // --- 3. Perhitungan Titik SL & TP ---
             const titikSL = hargaBeli - jarakSL;
-            const jarakTP = jarakSL * riskReward;
+            const jarakTPFloat = jarakSL * riskReward;
+            const jarakTP = Math.ceil(jarakTPFloat); // Bulatkan ke atas untuk TP
             const titikTP = hargaBeli + jarakTP;
 
             // --- 4. Perhitungan Lot Maksimum (Position Sizing) ---
@@ -147,7 +188,7 @@
                 <p>Titik SL Teknis: <strong>Rp${titikSL.toFixed(0)}</strong></p>
                 
                 <h4>📈 Exit Plan: Take-Profit (TP)</h4>
-                <p>Rasio Risk-Reward: <strong>1:${riskReward}</strong></p>
+                <p>Rasio Risk-Reward: <strong>1:${riskReward.toFixed(1)}</strong></p>
                 <p>Jarak TP: <strong>Rp${jarakTP}</strong></p>
                 <p>Titik TP Teknis: <strong>Rp${titikTP.toFixed(0)}</strong></p>
             `;
