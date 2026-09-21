@@ -3,41 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulator SL &amp; TP (1% Risiko)</title>
+    <meta name="description" content="Kalkulator position sizing untuk menghitung risiko, stop-loss, take-profit, dan jumlah saham trading.">
+    <title>Kalkulator Trading | Position Sizing</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <main class="container">
+        <header class="page-header">
+            <span class="eyebrow">TRADING TOOL</span>
+            <h1>Position Sizing</h1>
+            <p>Hitung ukuran posisi dan rencana exit berdasarkan batas risiko Anda.</p>
+        </header>
 
-    <div class="container">
-        <h2>💰 Kalkulator Trading (Position Sizing)</h2>
+        <form id="tradingForm" novalidate>
+            <section class="form-section" aria-labelledby="account-heading">
+                <h2 id="account-heading">Modal &amp; risiko</h2>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="modal">Total Modal <span>(Rupiah)</span></label>
+                        <input type="number" id="modal" value="962088" min="0.01" step="any" inputmode="decimal" required>
+                    </div>
+                    <div class="field">
+                        <label for="risiko">Batas Risiko Maksimal</label>
+                        <select id="risiko">
+                            <option value="0.01">1% — Sangat konservatif</option>
+                            <option value="0.03">3% — Konservatif</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
 
-        <label for="modal">Total Modal (Rupiah):</label>
-        <input type="number" id="modal" value="962088" min="0.01" step="any" required>
+            <section class="form-section" aria-labelledby="trade-heading">
+                <h2 id="trade-heading">Detail transaksi</h2>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="hargaBeli">Harga Beli <span>(Entry Price)</span></label>
+                        <input type="number" id="hargaBeli" min="0.01" step="any" inputmode="decimal" required>
+                    </div>
+                    <div class="field">
+                        <label for="atr">ATR <span>(Jarak SL 2× ATR)</span></label>
+                        <input type="number" id="atr" min="0.01" step="any" inputmode="decimal" required>
+                    </div>
+                    <div class="field">
+                        <label for="jumlahSaham">Jumlah Saham <span>(1 lot = 100 saham)</span></label>
+                        <input type="number" id="jumlahSaham" min="1" step="1" inputmode="numeric" placeholder="Opsional">
+                    </div>
+                    <div class="field">
+                        <label for="riskReward">Rasio Risk-Reward</label>
+                        <select id="riskReward">
+                            <option value="2">1 : 2</option>
+                            <option value="3">1 : 3</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
 
-        <label for="risiko">Batas Risiko Maksimal:</label>
-        <select id="risiko">
-            <option value="0.01">1% (Sangat Konservatif)</option>
-            <option value="0.03">3% (Konservatif)</option>
-        </select>
-        
-        <label for="hargaBeli">Harga Beli (Entry Price):</label>
-        <input type="number" id="hargaBeli" min="0.01" step="any" required>
+            <div class="actions">
+                <button class="button button-primary" type="submit">Hitung Posisi &amp; Exit</button>
+                <button class="button button-secondary" type="reset">Reset</button>
+            </div>
+        </form>
 
-        <label for="atr">ATR (Jarak SL 2x ATR):</label>
-        <input type="number" id="atr" min="0.01" step="any" required>
-
-        <label for="riskReward">Rasio Risk-Reward (R:R):</label>
-        <select id="riskReward">
-            <option value="2">1:2</option>
-            <option value="3">1:3</option>
-        </select>
-
-        <button type="button" onclick="hitungTrading()">Hitung Posisi &amp; Exit</button>
-
-        <div class="result" id="hasil">
+        <section class="result" id="hasil" aria-live="polite" aria-labelledby="result-heading">
             <p class="centered">Masukkan data untuk memulai perhitungan.</p>
-        </div>
-    </div>
+        </section>
+    </main>
 
     <script src="script.js"></script>
 </body>

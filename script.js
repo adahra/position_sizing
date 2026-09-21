@@ -1,10 +1,21 @@
+const form = document.getElementById('tradingForm');
+const hasilDiv = document.getElementById('hasil');
+
+function formatRupiah(value) {
+    return value.toLocaleString('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
 function hitungTrading() {
     const modal = parseFloat(document.getElementById('modal').value);
     const risiko = parseFloat(document.getElementById('risiko').value);
     const hargaBeli = parseFloat(document.getElementById('hargaBeli').value);
     const atr = parseFloat(document.getElementById('atr').value);
+    const jumlahSahamValue = document.getElementById('jumlahSaham').value;
+    const jumlahSaham = jumlahSahamValue === '' ? null : parseInt(jumlahSahamValue, 10);
     const riskReward = parseInt(document.getElementById('riskReward').value, 10);
-    const hasilDiv = document.getElementById('hasil');
 
     if (
         !Number.isFinite(modal) ||
@@ -18,34 +29,38 @@ function hitungTrading() {
         return;
     }
 
-    // --- 1. Perhitungan Batas Risiko ---
+    if (jumlahSaham !== null && (!Number.isInteger(jumlahSaham) || jumlahSaham <= 0)) {
+        hasilDiv.innerHTML = '<p class="error">Jumlah saham harus berupa bilangan bulat yang lebih besar dari nol.</p>';
+        return;
+    }
+
     const nilaiRisikoMaksimal = modal * risiko;
-
-    // --- 2. Perhitungan Jarak SL (2 x ATR) ---
-    const jarakSLFloat = atr * 2;
-    const jarakSL = Math.ceil(jarakSLFloat); // Bulatkan ke atas karena harga bergerak dalam Rupiah penuh
-
-    // --- 3. Perhitungan Titik SL & TP ---
+    const jarakSL = Math.ceil(atr * 2);
     const titikSL = hargaBeli - jarakSL;
     const jarakTP = jarakSL * riskReward;
     const titikTP = hargaBeli + jarakTP;
-
-    // --- 4. Perhitungan Lot Maksimum (Position Sizing) ---
     const risikoPerSaham = jarakSL;
     const lotMaksimum = Math.floor(nilaiRisikoMaksimal / (risikoPerSaham * 100));
+    const sahamMaksimum = lotMaksimum * 100;
+    const risikoAktual = jumlahSaham === null ? null : risikoPerSaham * jumlahSaham;
+    const lotAktual = jumlahSaham === null ? null : jumlahSaham / 100;
+    const melebihiBatas = risikoAktual !== null && risikoAktual > nilaiRisikoMaksimal;
 
-    // --- Tampilkan Hasil ---
     hasilDiv.innerHTML = `
-        <h3>✅ Hasil Perhitungan Optimal</h3>
+        <h3 id="result-heading">✅ Hasil Perhitungan Optimal</h3>
         <hr>
-        <p>Batas Risiko Nominal (${(risiko * 100).toFixed(0)}%): <strong>Rp${nilaiRisikoMaksimal.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</strong></p>
+        <p>Batas Risiko Nominal (${(risiko * 100).toFixed(0)}%): <strong>Rp${formatRupiah(nilaiRisikoMaksimal)}</strong></p>
 
         <h4>📊 Ukuran Posisi</h4>
-        <p>Risiko per Saham (Jarak SL): <strong>Rp${risikoPerSaham}</strong></p>
-        <p>Lot Maksimum (Aman): <strong>${lotMaksimum} Lot</strong></p>
+        <p>Lot Maksimum (Aman): <strong>${lotMaksimum} Lot (${sahamMaksimum.toLocaleString('id-ID')} saham)</strong></p>
+        ${jumlahSaham === null ? '<p>Jumlah saham aktual: <strong>Belum diisi</strong></p>' : `
+            <p>Jumlah saham aktual: <strong>${jumlahSaham.toLocaleString('id-ID')} saham (${lotAktual.toLocaleString('id-ID')} lot)</strong></p>
+            <p>Risiko aktual: <strong>Rp${formatRupiah(risikoAktual)}</strong></p>
+            ${melebihiBatas ? '<p class="warning">⚠️ Jumlah saham aktual melebihi batas risiko yang dipilih.</p>' : '<p class="success">✅ Jumlah saham aktual masih dalam batas risiko.</p>'}
+        `}
 
         <h4>📉 Exit Plan: Stop-Loss (SL)</h4>
-        <p>Jarak SL (2 x ATR): <strong>Rp${jarakSL}</strong></p>
+        <p>Jarak SL (2 × ATR): <strong>Rp${jarakSL}</strong></p>
         <p>Titik SL Teknis: <strong>Rp${titikSL.toFixed(0)}</strong></p>
 
         <h4>📈 Exit Plan: Take-Profit (TP)</h4>
@@ -54,3 +69,14 @@ function hitungTrading() {
         <p>Titik TP Teknis: <strong>Rp${titikTP.toFixed(0)}</strong></p>
     `;
 }
+
+form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    hitungTrading();
+});
+
+form.addEventListener('reset', () => {
+    window.setTimeout(() => {
+        hasilDiv.innerHTML = '<p class="centered">Masukkan data untuk memulai perhitungan.</p>';
+    }, 0);
+});
